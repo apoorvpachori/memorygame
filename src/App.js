@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import Card from './components/Card';
+import Header from './components/Header';
+import useAppBadge from './hooks/useAppBadge';
 import shuffle from './utilities/shuffle';
 
-
-
 function App() {
+  const [wins, setWins] = useState(0); // Win streak
   const [cards, setCards] = useState(shuffle); // Cards array from assets
   const [pickOne, setPickOne] = useState(null); // First selection
   const [pickTwo, setPickTwo] = useState(null); // Second selection
   const [disabled, setDisabled] = useState(false); // Delay handler
-  const [wins, setWins] = useState(0); // Win streak
+  const [setBadge, clearBadge] = useAppBadge(); // Handles app badge
 
   // Handle card selection
   const handleClick = (card) => {
@@ -22,6 +23,14 @@ function App() {
     setPickOne(null);
     setPickTwo(null);
     setDisabled(false);
+  };
+
+  // Start over
+  const handleNewGame = () => {
+    setWins(0);
+    clearBadge();
+    handleTurn();
+    setCards(shuffle);
   };
 
   // Used for selection and match handling
@@ -57,7 +66,8 @@ function App() {
     return () => {
       clearTimeout(pickTimer);
     };
-  }, [cards, pickOne, pickTwo]);
+  }, [cards, pickOne, pickTwo, setBadge, wins]);
+
 
   // If player has found all matches, handle accordingly
   useEffect(() => {
@@ -68,25 +78,27 @@ function App() {
     if (cards.length && checkWin.length < 1) {
       console.log('You win!');
       setWins(wins + 1);
+      setBadge();
       handleTurn();
       setCards(shuffle);
     }
-  }, [cards, wins]);
-
+  }, [cards, setBadge, wins]);
 
   return (
     <>
-
+      <Header handleNewGame={handleNewGame} wins={wins} />
       <div className="grid">
         {cards.map((card) => {
-          const { image, id, matched } = card;
+          // Destructured card properties
+          const { image, matched } = card;
 
           return (
             <Card
-              key={id}
+              key={image.id}
+              card={card}
               image={image}
-              selected={card === pickOne || card === pickTwo || matched}
               onClick={() => handleClick(card)}
+              selected={card === pickOne || card === pickTwo || matched}
             />
           );
         })}
